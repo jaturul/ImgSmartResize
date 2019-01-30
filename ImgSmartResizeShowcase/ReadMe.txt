@@ -1,6 +1,7 @@
 This application showcases the smart (i.e. content-aware) resize 
 functionality present in the Image Processing library. To build this
 program, the following pre-requisites have to be satisfied (not necessary if pre-built libraries and copies of original headers are used):
+(0) create a "build" directory if not present
 (1) go to the ImageProcessing directory and follow the instructions
 in ReadMe.txt to build the library.
 (2) copy the resulting libImageProcessing.so file to the lib directory
