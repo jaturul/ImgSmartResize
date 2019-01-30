@@ -1,6 +1,5 @@
-This is a third party library that allows to encode and decode image 
-data. To build the library, open the terminal in this directory and:
-(0) create a "build" directory if not present
+This is a third party library that allows to encode and decode image data. To build the library, open the terminal in this directory and:
+(0) mkdir build (if it's not already present)
 (1) cd build
 (2) cmake .. && make
 The static library will be created in the lib directory.

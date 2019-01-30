@@ -1,6 +1,4 @@
-This application showcases the smart (i.e. content-aware) resize 
-functionality present in the Image Processing library. To build this
-program, the following pre-requisites have to be satisfied (not necessary if pre-built libraries and copies of original headers are used):
+This application showcases the smart (i.e. content-aware) resize functionality present in the Image Processing library. To build this program, the following pre-requisites have to be satisfied (not necessary if pre-built libraries and copies of original headers are used):
 (0) create a "build" directory if not present
 (1) go to the ImageProcessing directory and follow the instructions
 in ReadMe.txt to build the library.
@@ -15,8 +13,8 @@ directory in this project
 (6) copy the file lodepng.h in lodepng/include to 
 ImgSmartResizeShowcase/thirdparty/include
 
-When these pre-requisites have been fulfilled, to build the library, 
-open the terminal in this directory and:
+When these pre-requisites have been fulfilled, to build the library, open the terminal in this directory and:
+(0) mkdir build (if it's not already present)
 (1) cd build
 (2) cmake .. && make
 The application will be created in the bin directory. Instructions on how
