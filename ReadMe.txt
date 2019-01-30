@@ -1,0 +1,12 @@
+This directory contains elements of the content-aware resizing application.
+There are 2 shared libraries - "ImageProcessing" that allows for resizing
+itself and a couple of other operations and "lodepng", a third party library that allows to encode and decode image files. The third directory,
+"ImgSmartResizeShowcase" contains an application that uses the libraries
+to resize provided images using seam carving. 
+
+Now, both "ImageProcessing" and "lodepng" have been pre-built and put into
+"lib" and "thirdparty/lodepng/lib" directories respectively. Additionally,
+their headers have been copied into "include" and "thirdparty/lodepng/include" respectively. Thanks to this, it should be enough to build and
+make only the "ImgSmartResizeShowcase" project. However, those libraries
+can be built from scratch - instructions on how to do that are contained 
+in the "ReadMe" files of their projects and information on how to transfer those files to the "Showcase" project are contained in the "ReadMe" file of its directory.  
