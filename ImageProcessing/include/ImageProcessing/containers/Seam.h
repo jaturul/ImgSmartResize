@@ -2,7 +2,7 @@
 #define SEAM_H
 
 #include <utility>
-#include "Orientation.h"
+#include "ImageProcessing/containers/Orientation.h"
 
 struct Coord2D
 {
@@ -28,13 +28,6 @@ struct Seam
 {
 public:
 	Seam(Orientation orientation): m_orientation(orientation) {}
-
-	Seam(std::vector<Coord2D> elements, Orientation orientation):
-		m_elements(elements),
-		m_orientation(orientation)
-	{
-
-	}
 
 	void addElement(Coord2D point)
 	{

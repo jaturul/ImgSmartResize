@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include "Size.h"
-#include "Seam.h"
-#include "Orientation.h"
+#include "ImageProcessing/containers/Size.h"
+#include "ImageProcessing/containers/Seam.h"
+#include "ImageProcessing/containers/Orientation.h"
 
 class ImageGray
 {

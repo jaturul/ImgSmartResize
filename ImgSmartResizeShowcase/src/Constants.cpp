@@ -4,3 +4,8 @@ std::vector<std::string> Constants::ConstantElements::getAcceptableImageExtensio
 {
 	return std::vector<std::string>{"png"};
 }
+
+std::vector<std::string> Constants::ConstantElements::getAcceptableTags()
+{
+	return std::vector<std::string>{"-s", "-i", "-o", "-m", "-d"};
+}

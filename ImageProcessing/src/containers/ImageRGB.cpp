@@ -101,7 +101,7 @@ void ImageRGB::removeSeam(const Seam& seam, Orientation orientation)
 	else if (orientation == Orientation::Horizontal)
 	{
 		unsigned lastRow = height() - 1;
-		for (unsigned i = 0; i < seam.size(); ++i)
+		for (int i = 0; i < seam.size(); ++i)
 		{
 			unsigned currentCol = seam.at(i).Col();
 			for(unsigned currentRow = seam.at(i).Row(); currentRow != lastRow; ++currentRow )

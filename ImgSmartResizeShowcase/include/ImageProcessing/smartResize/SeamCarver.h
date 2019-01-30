@@ -1,27 +1,42 @@
 #ifndef SEAM_CARVER_H
 #define SEAM_CARVER_H
 
+#include <memory>
+
 #include "ImageProcessing/containers/ImageRGB.h"
 #include "ImageProcessing/containers/ImageGray.h"
 #include "ImageProcessing/containers/Size.h"
 #include "ImageProcessing/containers/Seam.h"
 #include "ImageProcessing/containers/Orientation.h"
-
+#include "ImageProcessing/smartResize/EnergyCalculator.h"
 
 
 class SeamCarver
 {
 public:
-	static void resizeImage(ImageRGB& image, ImageRGB& mask, const Size& targetSize);
-	static void resizeImage(ImageRGB& image, const Size& targetSize);
-	//TODO - RESIZE IMAGE GRAY!!!!
+	SeamCarver();
+	std::vector<ImageRGB> resizeImage(ImageRGB& image, ImageRGB& mask, const Size& targetSize);
+	std::vector<ImageRGB> resizeImage(ImageRGB& image, const Size& targetSize);
+
+	void enableDebugMode();
+	void disableDebugMode();
 
 private:
-	static ImageGray createCummulativeEnergyMap(const ImageGray& energyMap, Orientation orientation);
-	static std::vector<Orientation> getRemovalOrder(int rowsToRemove, int colsToRemove);
+	bool isMaskLegal(const ImageRGB& image, const ImageRGB& mask);
 
-	static Seam findSeam(const ImageGray& cummulativeEnergyMap, Orientation orientation);
-	static void removeSeams(ImageRGB& image, ImageGray& energyMap, const Size& targetSize);
+	bool isDebugEnabled();
+
+	std::vector<ImageRGB> chooseStrategy(ImageRGB& image, ImageGray& energyMap, const Size& targetSize);
+
+	ImageGray createCummulativeEnergyMap(const ImageGray& energyMap, Orientation orientation);
+	std::vector<Orientation> getRemovalOrder(int rowsToRemove, int colsToRemove);
+
+	Seam findSeam(const ImageGray& cummulativeEnergyMap, Orientation orientation);
+	void insertSeams(ImageRGB& image, ImageGray& energyMap, const Size& targetSize);
+	std::vector<ImageRGB> removeSeams(ImageRGB& image, ImageGray& energyMap, const Size& targetSize);
+
+	std::unique_ptr<EnergyCalculator> m_energyCalculator;
+	bool m_debug;
 };
 
 #endif

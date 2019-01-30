@@ -3,13 +3,14 @@
 
 #include "ImageProcessing/containers/ImageRGB.h"
 #include "ImageProcessing/containers/ImageGray.h"
+#include "ImageProcessing/smartResize/ImageCalculator.h"
 
 class EnergyCalculator
 {
 public:
 
-	static ImageGray calculateEnergy(const ImageRGB& image);
-	static ImageGray calculateEnergy(const ImageRGB& image, const ImageRGB& mask);
+	ImageGray calculateEnergy(const ImageRGB& image);
+	ImageGray calculateEnergy(const ImageRGB& image, const ImageRGB& mask);
 
 private:
 

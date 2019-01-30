@@ -5,23 +5,84 @@
 #include "ImageProcessing/smartResize/EnergyCalculator.h"
 #include "ImageProcessing/containers/Seam.h"
 
-void SeamCarver::resizeImage(ImageRGB& image, const Size& targetSize)
+SeamCarver::SeamCarver(): m_debug(false)
 {
-	ImageGray energyMap = EnergyCalculator::calculateEnergy(image);
-	removeSeams(image, energyMap, targetSize);
+	m_energyCalculator = std::unique_ptr<EnergyCalculator>(new EnergyCalculator());
 }
 
-void SeamCarver::resizeImage(ImageRGB& image, ImageRGB& mask, const Size& targetSize)
+std::vector<ImageRGB>  SeamCarver::resizeImage(ImageRGB& image, const Size& targetSize)
 {
-	ImageGray energyMap = EnergyCalculator::calculateEnergy(image, mask);
-	removeSeams(image, energyMap, targetSize);
+	ImageGray energyMap = m_energyCalculator->calculateEnergy(image);
+
+	return chooseStrategy(image, energyMap, targetSize);
 }
 
-void SeamCarver::removeSeams(ImageRGB& image, ImageGray& energyMap, const Size& targetSize)
+std::vector<ImageRGB> SeamCarver::resizeImage(ImageRGB& image, ImageRGB& mask, const Size& targetSize)
+{
+	if (!isMaskLegal(image, mask))
+	{
+		throw "The dimensions of the image and the mask are mismatched!";
+	}
+
+	ImageGray energyMap = m_energyCalculator->calculateEnergy(image, mask);
+
+	return chooseStrategy(image, energyMap, targetSize);
+}
+
+void SeamCarver::enableDebugMode()
+{
+	m_debug = true;
+}
+
+void SeamCarver::disableDebugMode()
+{
+	m_debug = false;
+}
+
+bool SeamCarver::isMaskLegal(const ImageRGB& image, const ImageRGB& mask)
+{
+	return ((image.width() == mask.width()) && (image.height() == mask.height()));
+}
+
+bool SeamCarver::isDebugEnabled()
+{
+	return m_debug;
+}
+
+std::vector<ImageRGB> SeamCarver::chooseStrategy(ImageRGB& image, ImageGray& energyMap, const Size& targetSize)
+{
+	// Negative values mean rows/cols to *remove*
+	int rowsToAdd = int(targetSize.Height) - int(image.height());
+	int colsToAdd = int(targetSize.Width) - int(image.width());
+
+	std::vector<ImageRGB> seamImages; // this vector gets filled only if DEBUG mode is enabled;
+	if( (rowsToAdd > 0) && (colsToAdd > 0) )
+	{
+		throw "Image enlargening is not implemented yet!";
+	}
+	else if ( (rowsToAdd < 0) && (colsToAdd < 0) )
+	{
+		seamImages = removeSeams(image, energyMap, targetSize);
+	}
+	else if ( (rowsToAdd < 0) && (colsToAdd > 0) )
+	{
+		throw "Image enlargening is not implemented yet!";
+	}
+	else if ( (rowsToAdd > 0) && (colsToAdd < 0) )
+	{
+		throw "Image enlargening is not implemented yet!";
+	}
+
+	return seamImages;
+}
+
+std::vector<ImageRGB> SeamCarver::removeSeams(ImageRGB& image, ImageGray& energyMap, const Size& targetSize)
 {
 	// for the moment, we assume only sizes smaller than the target size
 	unsigned rowsToRemove = image.height() - targetSize.Height;
 	unsigned colsToRemove = image.width() - targetSize.Width;
+
+	std::vector<ImageRGB> seamImages; // filled only if DEBUG mode is enabled
 
 	std::vector<Orientation> removalOrder = getRemovalOrder(rowsToRemove, colsToRemove);
 	for(unsigned i = 0; i < removalOrder.size(); ++i)
@@ -31,9 +92,17 @@ void SeamCarver::removeSeams(ImageRGB& image, ImageGray& energyMap, const Size& 
 
 		Seam currentSeam = findSeam(cummulativeEnergyMap, currentOrientation);
 
+		if(isDebugEnabled())
+		{
+			image.markSeam(currentSeam);
+			seamImages.push_back(image);
+		}
+
 		image.removeSeam(currentSeam, currentOrientation);
 		energyMap.removeSeam(currentSeam, currentOrientation);
 	}
+
+	return seamImages;
 }
 
 ImageGray SeamCarver::createCummulativeEnergyMap(const ImageGray& energyMap, Orientation orientation)
@@ -86,6 +155,8 @@ ImageGray SeamCarver::createCummulativeEnergyMap(const ImageGray& energyMap, Ori
 
 std::vector<Orientation> SeamCarver::getRemovalOrder(int rowsToRemove, int colsToRemove)
 {
+	// Vertical and horizontal seam are used interchangeably as long as it's allowed by target dimensions.
+
 	const int totalRemovalNumber = rowsToRemove + colsToRemove;
 	std::vector<Orientation> removalOrder;
 	for(int i = 0; i < totalRemovalNumber; ++i)
@@ -121,26 +192,28 @@ std::vector<Orientation> SeamCarver::getRemovalOrder(int rowsToRemove, int colsT
 
 Seam SeamCarver::findSeam(const ImageGray& cummulativeEnergyMap, Orientation orientation)
 {
+	Seam seam(orientation);
+
 	if (orientation == Orientation::Vertical)
 	{
-		unsigned lastRow = cummulativeEnergyMap.height() - 1;
+		unsigned lastRowIndex = cummulativeEnergyMap.height() - 1;
 		unsigned currentMinEnergyCol = 0;
-		int minEnergy = cummulativeEnergyMap.at(lastRow, currentMinEnergyCol);
+		int minEnergy = cummulativeEnergyMap.at(lastRowIndex, currentMinEnergyCol);
 		for (unsigned col = 1; col < cummulativeEnergyMap.width(); ++col)
 		{
-			if (cummulativeEnergyMap.at(lastRow, col) < minEnergy)
+			if (cummulativeEnergyMap.at(lastRowIndex, col) < minEnergy)
 			{
 				currentMinEnergyCol = col;
-				minEnergy = cummulativeEnergyMap.at(lastRow, col);
+				minEnergy = cummulativeEnergyMap.at(lastRowIndex, col);
 			}
 		}
-		Coord2D startingPoint(lastRow, currentMinEnergyCol);
+		Coord2D seamStart(lastRowIndex, currentMinEnergyCol);
 
-		Seam seam(Orientation::Vertical);
-		seam.addElement(startingPoint);
 
-		int prevMinEnergyCol = startingPoint.Col();
-		for(int row = int(lastRow) - 1; row >= 0; --row)
+		seam.addElement(seamStart);
+
+		int prevMinEnergyCol = seamStart.Col();
+		for(int row = int(lastRowIndex) - 1; row >= 0; --row)
 		{
 			int leftCol= std::max(0, prevMinEnergyCol - 1);
 			int middleCol = prevMinEnergyCol;
@@ -165,8 +238,6 @@ Seam SeamCarver::findSeam(const ImageGray& cummulativeEnergyMap, Orientation ori
 
 			prevMinEnergyCol = currentMinEnergyCol;
 		}
-
-		return seam;
 	}
 	else if (orientation == Orientation::Horizontal)
 	{
@@ -183,7 +254,6 @@ Seam SeamCarver::findSeam(const ImageGray& cummulativeEnergyMap, Orientation ori
 		}
 		Coord2D startingPoint(currentMinEnergyRow , lastCol);
 
-		Seam seam(Orientation::Horizontal);
 		seam.addElement(startingPoint);
 
 		int prevMinEnergyRow = startingPoint.Row();
@@ -213,7 +283,7 @@ Seam SeamCarver::findSeam(const ImageGray& cummulativeEnergyMap, Orientation ori
 
 			prevMinEnergyRow = currentMinEnergyRow;
 		}
-
-		return seam;
 	}
+
+	return seam;
 }

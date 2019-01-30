@@ -10,6 +10,7 @@
 
 InputParser::InputParser()
 {
+	m_tagCodes = {{"-s", 's'}, {"-i", 'i'}, {"-o", 'o'}, {"-m", 'm'}, {"-d", 'd'}, };
 }
 
 
@@ -19,51 +20,96 @@ InputParser::~InputParser()
 
 std::vector<std::string> InputParser::parseInput(int argc, char ** argv)
 {
+
 	/////// We are assuming CLI input in format:
-	// (1) target size (provided as "target_heightxtarget_width")
-	// (2) input file name
-	// (3) output file name
-	// (4) (optional) energy mask file name
+	// "-s" tag followed by target size (provided as "target_heightxtarget_width")
+	// "-i" tag followed by input file name
+	// "-o" tag followed by output file name
+	// (optional) "-m" tag followed by energy mask file name
+	// (optional) "-d" tag followed by "debugDirectory/base_name.png"
 
 	std::vector<std::string> rawInput = getRawInput(argc, argv);
-	std::vector<std::string> parsed_input;
+	std::vector<std::string> parsed_input(8);
 
 	// argument at index 0 is omitted as it's the name of the program which isn't needed
-	for (int argumentIndex = 1; argumentIndex < int(rawInput.size()); ++argumentIndex)
+	for(unsigned argumentIndex = 1; argumentIndex < rawInput.size(); argumentIndex += 2)
 	{
-		std::string currentArgument = rawInput[argumentIndex];
-		switch (argumentIndex)
+		std::string currentTag= rawInput[argumentIndex];
+
+		if ( !isAcceptableTag(currentTag) ||
+			 (argumentIndex + 1 == rawInput.size())  )
 		{
-			case (1):
+			throw "Wrong input arguments have been provided";
+		}
+
+		std::string currentArgument = rawInput[argumentIndex + 1];
+		switch (m_tagCodes.at(currentTag))
+		{
+			case ('s'):
 			{
 				if (!isValidSize(currentArgument))
 				{
 					throw "Invalid size provided!";
 				}
 
-				parsed_input.push_back(getHeight(currentArgument));
-				parsed_input.push_back(getWidth(currentArgument));
+				parsed_input[Constants::InputIndexes::HEIGHT] = getHeight(currentArgument);
+				parsed_input[Constants::InputIndexes::WIDTH] = getWidth(currentArgument);
 
 				break;
 			}
-			case (2):
-			case (3):
-			case (4):
+			case ('i'):
 			{
 				if (!isImageName(currentArgument))
 				{
-					throw "Invalid size provided!";
+					throw "Invalid input name provided!";
 				}
 
-				parsed_input.push_back(currentArgument);
+				parsed_input[Constants::InputIndexes::INPUT] = currentArgument;
 
 				break;
 			}
-			default:
+			case ('o'):
 			{
-				throw "Wrong number of arguments provided!";
+				if (!isImageName(currentArgument))
+				{
+					throw "Invalid input name provided!";
+				}
+
+				parsed_input[Constants::InputIndexes::OUTPUT] = currentArgument;
+
+				break;
+			}
+			case ('m'):
+			{
+				if (!isImageName(currentArgument))
+				{
+					throw "Invalid input name provided!";
+				}
+
+				parsed_input[Constants::InputIndexes::MASK] = currentArgument;
+
+				break;
+			}
+			case ('d'):
+			{
+				if (!isImageName(currentArgument))
+				{
+					throw "Invalid input name provided!";
+				}
+				std::string baseName = getImageName(currentArgument);
+				std::string extension = getImageExtension(currentArgument);
+				parsed_input[Constants::InputIndexes::DEBUG] = "1";
+				parsed_input[Constants::InputIndexes::DEBUG_BASE_NAME] = baseName;
+				parsed_input[Constants::InputIndexes::DEBUG_EXTENSION] = extension;
+
+				break;
 			}
 		}
+	}
+
+	if(!isValidInput(parsed_input))
+	{
+		throw "Wrong input arguments have been provided";
 	}
 
 	return parsed_input;
@@ -98,11 +144,10 @@ std::string InputParser::getFilenameFromPath(const std::string & path)
 
 bool InputParser::isImageName(const std::string & path)
 {
-	std::string file_name = getFilenameFromPath(path);
-	int dot_index = static_cast<int>(file_name.find("."));
+	std::string fileName = getFilenameFromPath(path);
 
-	std::string name(file_name.begin(), file_name.begin() + dot_index);
-	std::string extension(file_name.begin() + dot_index + 1, file_name.end());
+	std::string name = getImageName(fileName);
+	std::string extension = getImageExtension(fileName);
 
 	if (!isAlphanumerical(name))
 	{
@@ -128,6 +173,21 @@ bool InputParser::isAlphanumerical(const std::string & name)
 	}
 
 	return true;
+}
+
+bool InputParser::isAcceptableTag(const std::string& tag)
+{
+	std::vector<std::string> acceptableTags = Constants::ConstantElements::getAcceptableTags();
+
+	for (const auto& acceptableTag: acceptableTags)
+	{
+		if (tag == acceptableTag)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool InputParser::isAcceptableImageExtension(const std::string & extension)
@@ -174,6 +234,14 @@ bool InputParser::isValidSize(const std::string & sizeStr)
 	return (isNumber(width) && isNumber(height));
 }
 
+bool InputParser::isValidInput(const std::vector<std::string> input)
+{
+	return ( (!input[Constants::InputIndexes::INPUT].empty()) &&
+			 (!input[Constants::InputIndexes::OUTPUT].empty()) &&
+			 (!input[Constants::InputIndexes::WIDTH].empty()) &&
+			 (!input[Constants::InputIndexes::HEIGHT].empty()) );
+}
+
 std::string InputParser::getHeight(const std::string & sizeStr)
 {
 	int x_index = static_cast<int>(sizeStr.find_first_of("x"));
@@ -193,4 +261,18 @@ std::string InputParser::getWidth(const std::string & sizeStr)
 	}
 
 	return sizeStr.substr(x_index + 1, sizeStr.size() - x_index);
+}
+
+std::string InputParser::getImageExtension(const std::string& imageName)
+{
+	int dot_index = static_cast<int>(imageName.find("."));
+
+	return std::string(imageName.begin() + dot_index + 1, imageName.end());
+}
+
+std::string InputParser::getImageName(const std::string& imageName)
+{
+	int dot_index = static_cast<int>(imageName.find("."));
+
+	return std::string(imageName.begin(), imageName.begin() + dot_index);
 }

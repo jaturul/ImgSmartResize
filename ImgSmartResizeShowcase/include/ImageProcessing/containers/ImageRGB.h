@@ -3,10 +3,10 @@
 
 #include <vector>
 
-#include "Pixel.h"
-#include "Size.h"
-#include "Orientation.h"
-#include "Seam.h" //DEBUG
+#include "ImageProcessing/containers/Pixel.h"
+#include "ImageProcessing/containers/Size.h"
+#include "ImageProcessing/containers/Orientation.h"
+#include "ImageProcessing/containers/Seam.h"
 
 class ImageRGB
 {

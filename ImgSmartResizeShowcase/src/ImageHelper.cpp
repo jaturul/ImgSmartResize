@@ -1,5 +1,4 @@
 #include <stdexcept>
-
 #include "lodepng/include/lodepng.h"
 
 #include "ImageHelper.h"

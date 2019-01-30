@@ -8,39 +8,88 @@
 
 #include <iostream>
 
+#include "lodepng/include/lodepng.h"
+
 #include "ImageProcessing/containers/ImageRGB.h"
 #include "ImageProcessing/containers/ImageGray.h"
+#include "ImageProcessing/containers/Orientation.h"
 #include "ImageProcessing/smartResize/SeamCarver.h"
+#include "ImageProcessing/smartResize/EnergyCalculator.h"
 
+#include "Constants.h"
 #include "ImageHelper.h"
 #include "InputParser.h"
+
+
+bool isMaskProvided(const std::vector<std::string>& arguments)
+{
+	return !(arguments.at(Constants::InputIndexes::MASK).empty());
+}
+
+bool isDebugEnabled(const std::vector<std::string>& arguments)
+{
+	return !(arguments.at(Constants::InputIndexes::DEBUG).empty());
+}
+
+void saveSeamImages(const std::vector<ImageRGB>& seamImages, const std::vector<std::string>& arguments)
+{
+	std::string baseName = arguments[Constants::InputIndexes::DEBUG_BASE_NAME];
+	std::string extension = arguments[Constants::InputIndexes::DEBUG_EXTENSION];
+
+	for(unsigned i = 0; i < seamImages.size(); ++i)
+	{
+		ImageHelper::saveImage(seamImages[i], baseName + std::to_string(i) + extension);
+	}
+}
 
 int main(int argc, char** argv)
 {
 	try
 	{
-		std::vector<std::string> arguments = InputParser::parseInput(argc, argv);
-		ImageRGB input = ImageHelper::loadImageRGB(arguments[2]);
-		Size targetSize(std::stoi(arguments[1]), std::stoi(arguments[0]));
+		InputParser inputParser;
+		std::vector<std::string> arguments = inputParser.parseInput(argc, argv);
+
+		ImageRGB input = ImageHelper::loadImageRGB(arguments[Constants::InputIndexes::INPUT]);
+		bool debug = isDebugEnabled(arguments);
+		Size targetSize(std::stoi(arguments[Constants::InputIndexes::WIDTH]), std::stoi(arguments[Constants::InputIndexes::HEIGHT]));
 
 		SeamCarver carver;
-		if (arguments.size() == 5)
+		if (isMaskProvided(arguments))
 		{
-			std::string energyMask = arguments[4];
+			std::string energyMask = arguments[Constants::InputIndexes::MASK];
 			ImageRGB mask = ImageHelper::loadImageRGB(energyMask);
-			carver.resizeImage(input, mask, targetSize);
+			if(debug)
+			{
+				carver.enableDebugMode();
+				std::vector<ImageRGB> seamImages = carver.resizeImage(input, mask, targetSize);
+				saveSeamImages(seamImages, arguments);
+			}
+			else
+			{
+				carver.resizeImage(input, mask, targetSize);
+			}
 		}
 		else
 		{
-			carver.resizeImage(input, targetSize);
+			if(debug)
+			{
+				carver.enableDebugMode();
+				std::vector<ImageRGB> seamImages = carver.resizeImage(input, targetSize);
+
+				saveSeamImages(seamImages, arguments);
+			}
+			else
+			{
+				carver.resizeImage(input, targetSize);
+			}
 		}
 
 		std::string outputFile = arguments[3];
 		ImageHelper::saveImage(input, outputFile);
 	}
-	catch(std::exception& e)
+	catch(char const* e)
 	{
-		std::cout << e.what() << std::endl;
+		std::cout << e << std::endl;
 	}
 
 	return 0;

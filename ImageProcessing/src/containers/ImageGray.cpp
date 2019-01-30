@@ -1,6 +1,12 @@
 #include <algorithm>
 #include "ImageProcessing/containers/ImageGray.h"
 
+namespace
+{
+	const int MAX_NEIGHBOURHOOD_INDEX = 1;
+	const int MIN_NEIGHBOURHOOD_INDEX = -1;
+}
+
 ImageGray::ImageGray():
 	m_data(std::vector<int>()),
 	m_size(0,0)
@@ -47,9 +53,9 @@ ImageGray ImageGray::neighbourhood(unsigned row, unsigned col) const
 	std::vector<int> neighbourhoodData( 3 * 3, 0);
 	ImageGray neighbourhood(neighbourhoodData, 3, 3);
 
-	for(int i = -1; i < 2; ++i)
+	for(int i = MIN_NEIGHBOURHOOD_INDEX; i <= MAX_NEIGHBOURHOOD_INDEX; ++i)
 	{
-		for(int j = -1; j < 2; ++j)
+		for(int j = MIN_NEIGHBOURHOOD_INDEX; j <= MAX_NEIGHBOURHOOD_INDEX; ++j)
 		{
 			int currRow = std::max(0, int(row) + i);
 			currRow = std::min(currRow, int(height()) - 1);
@@ -85,7 +91,7 @@ void ImageGray::removeSeam(const Seam& seam, Orientation orientation)
 	else if (orientation == Orientation::Horizontal)
 	{
 		unsigned lastRow = height() - 1;
-		for (unsigned i = 0; i < seam.size(); ++i)
+		for (int i = 0; i < int(seam.size()); ++i)
 		{
 			unsigned currentCol = seam.at(i).Col();
 			for(unsigned currentRow = seam.at(i).Row(); currentRow != lastRow; ++currentRow )
